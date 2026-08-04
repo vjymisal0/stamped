@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>STAMPED — package QC console</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="frame">
+  <aside class="rail">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">◉</span>
+      <h1>STAMPED</h1>
+      <p class="brand-sub">a QC console for six little packages</p>
+    </div>
+
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button class="tab-btn active" data-tab="intake" role="tab" aria-selected="true">
+        Intake <span>photo checks</span>
+      </button>
+      <button class="tab-btn" data-tab="registry" role="tab" aria-selected="false">
+        Registry <span>ID validation</span>
+      </button>
+    </nav>
+
+    <div class="rail-foot">
+      <p class="rail-foot-label">Under test</p>
+      <ul>
+        <li><span class="dot dot--blur"></span>blur&#8209;score</li>
+        <li><span class="dot dot--exp"></span>exposure&#8209;score</li>
+        <li><span class="dot dot--hash"></span>photo&#8209;hash</li>
+        <li><span class="dot dot--exif"></span>strip&#8209;exif</li>
+        <li><span class="dot dot--pan"></span>pan&#8209;validator</li>
+        <li><span class="dot dot--gstin"></span>gstin&#8209;validate</li>
+      </ul>
+    </div>
+  </aside>
+
+  <main class="stage">
+    <section id="intake" class="panel active" role="tabpanel">
+      <header class="panel-head">
+        <h2>Intake</h2>
+        <p>Feed a photo through the slot. Each frame is scored for sharpness, exposure, near&#8209;duplication and hidden GPS data before it's cleared.</p>
+      </header>
+
+      <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Upload a photo">
+        <input type="file" id="fileInput" accept="image/*" hidden />
+        <div class="slot" aria-hidden="true">
+          <div class="slot-mouth"></div>
+        </div>
+        <p class="drop-label">Drag a photo in, or <button type="button" id="browseBtn">browse files</button></p>
+        <p class="drop-hint" id="dropHint">Nothing processed leaves this machine — files stay on this server.</p>
+      </div>
+
+      <div class="sheet" id="gallery" aria-live="polite"></div>
+      <p class="empty-note" id="emptyNote">No frames developed yet. Drop one in above.</p>
+    </section>
+
+    <section id="registry" class="panel" role="tabpanel">
+      <header class="panel-head">
+        <h2>Registry</h2>
+        <p>Run a PAN or GSTIN through its structural and checksum rules. Every check is filed in the ledger below, valid or not.</p>
+      </header>
+
+      <div class="ledger-row">
+        <form class="ledger-card" id="panForm" autocomplete="off">
+          <h3>PAN card</h3>
+          <label>Number
+            <input name="pan" placeholder="ABCDE1234F" maxlength="10" />
+          </label>
+          <label>Holder name <span class="opt">optional</span>
+            <input name="holderName" placeholder="cross-checks the 5th letter" />
+          </label>
+          <button type="submit">Check PAN</button>
+          <div class="ledger-result" id="panResult"></div>
+        </form>
+
+        <form class="ledger-card" id="gstinForm" autocomplete="off">
+          <h3>GSTIN</h3>
+          <label>Number
+            <input name="gstin" placeholder="27ABCDE1234F1Z5" maxlength="15" />
+          </label>
+          <button type="submit">Check GSTIN</button>
+          <div class="ledger-result" id="gstinResult"></div>
+        </form>
+      </div>
+
+      <div class="log">
+        <h3>Recent filings</h3>
+        <div class="log-list" id="logList"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

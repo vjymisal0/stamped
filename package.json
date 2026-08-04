@@ -1,0 +1,24 @@
+{
+  "name": "stamped",
+  "version": "1.0.0",
+  "private": true,
+  "description": "QC console for testing blur-score, exposure-score, photo-hash, strip-exif, pan-validator and gstin-validate",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.3.0",
+    "blur-score": "file:../blur-score",
+    "exposure-score": "file:../exposure-score",
+    "@vijayishere/gstin-validate": "file:../gstin-validate",
+    "@vijayishere/pan-validator": "file:../pan-validator",
+    "@vijayishere/photo-hash": "file:../photo-hash",
+    "@vijayishere/strip-exif": "file:../strip-exif",
+    "express": "^4.19.2",
+    "multer": "^2.0.0",
+    "nanoid": "^5.0.7"
+  }
+}
