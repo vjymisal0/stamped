@@ -281,7 +281,6 @@ button { cursor: pointer; }
 }
 
 .frame-thumb-wrap {
-  position: relative;
   background: var(--ink);
 }
 
@@ -307,6 +306,7 @@ button { cursor: pointer; }
 
 .stamp {
   position: absolute;
+  z-index: 2;
   top: 0.7rem;
   right: 0.7rem;
   padding: 0.22rem 0.55rem;

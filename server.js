@@ -15,7 +15,7 @@ import { isValidGstin, parseGstin } from '@vijayishere/gstin-validate';
 import { db } from './db.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const UPLOAD_DIR = path.join(__dirname, 'uploads');
+const UPLOAD_DIR = process.env.STAMPED_UPLOAD_DIR || path.join(__dirname, 'uploads');
 await fs.mkdir(UPLOAD_DIR, { recursive: true });
 
 const BLUR_THRESHOLD = 0.35;
