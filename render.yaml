@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: stamped
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
