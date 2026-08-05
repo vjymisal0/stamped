@@ -10,13 +10,13 @@
     "dev": "node --watch server.js"
   },
   "dependencies": {
-    "@vijayishere/gstin-validate": "file:../gstin-validate",
-    "@vijayishere/pan-validator": "file:../pan-validator",
-    "@vijayishere/photo-hash": "file:../photo-hash",
-    "@vijayishere/strip-exif": "file:../strip-exif",
+    "@vijayishere/gstin-validate": "^1.0.0",
+    "@vijayishere/pan-validator": "^1.0.0",
+    "@vijayishere/photo-hash": "^1.0.0",
+    "@vijayishere/strip-exif": "^1.0.0",
     "better-sqlite3": "^11.3.0",
-    "blur-score": "file:../blur-score",
-    "exposure-score": "file:../exposure-score",
+    "blur-score": "^1.0.1",
+    "exposure-score": "^1.0.0",
     "express": "^4.19.2",
     "multer": "^2.0.0",
     "nanoid": "^5.0.7"
