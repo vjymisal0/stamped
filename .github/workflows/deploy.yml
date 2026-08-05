@@ -1,0 +1,16 @@
+name: Deploy
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  deploy:
+    uses: vjymisal0/deploy-pipeline/.github/workflows/reusable-deploy.yml@main
+    with:
+      name: stamped
+      type: render
+      branch: master
+      buildCommand: npm install
+      startCommand: npm start
+    secrets: inherit
