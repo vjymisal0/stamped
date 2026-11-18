@@ -1,11 +1,11 @@
-import Database from 'better-sqlite3';
+import { DatabaseSync as Database } from 'node:sqlite';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const db = new Database(process.env.STAMPED_DB_PATH || path.join(__dirname, 'stamped.db'));
 
-db.pragma('journal_mode = WAL');
+db.exec('PRAGMA journal_mode = WAL');
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS photos (

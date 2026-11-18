@@ -4,6 +4,7 @@ import path from 'node:path';
 import fs from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { nanoid } from 'nanoid';
+import sharp from 'sharp';
 
 import { getBlurScore } from 'blur-score';
 import { getExposureInfo } from 'exposure-score';
@@ -21,16 +22,49 @@ await fs.mkdir(UPLOAD_DIR, { recursive: true });
 const BLUR_THRESHOLD = 0.35;
 const DUPLICATE_THRESHOLD = 0.9;
 
-const app = express();
+function imageFormat(buffer) {
+  return buffer.subarray(0, 3).equals(Buffer.from([0xff, 0xd8, 0xff])) ? 'jpeg'
+    : buffer.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])) ? 'png'
+    : buffer.toString('ascii', 0, 4) === 'RIFF' && buffer.toString('ascii', 8, 12) === 'WEBP' ? 'webp' : null;
+}
+
+export const app = express();
+// This console contains local GPS and registry data and has no remote login.
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  const host = req.headers.host;
+  let url;
+  try { url = new URL(`http://${host}`); } catch { return res.sendStatus(403); }
+  if (!['localhost', '127.0.0.1', '[::1]'].includes(url.hostname) ||
+      (req.headers.origin && req.headers.origin !== url.origin) ||
+      req.headers['sec-fetch-site'] === 'cross-site') return res.sendStatus(403);
+  next();
+});
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
-app.use('/uploads', express.static(UPLOAD_DIR));
+app.use('/uploads', async (req, res, next) => {
+  // Apply safe serving rules to legacy files as well as new uploads.
+  const match = /^\/([\w-]+)\.(jpg|jpeg|png|webp)$/.exec(req.path);
+  if (!match) return res.sendStatus(404);
+  let file;
+  try {
+    file = await fs.open(path.join(UPLOAD_DIR, match[0].slice(1)), 'r');
+    const header = Buffer.alloc(12);
+    await file.read(header, 0, 12, 0);
+    const expected = match[2] === 'jpg' ? 'jpeg' : match[2];
+    if (imageFormat(header) !== expected) return res.sendStatus(404);
+  } catch { return res.sendStatus(404); }
+  finally { await file?.close(); }
+  next();
+}, express.static(UPLOAD_DIR));
 
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 25 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    if (!file.mimetype.startsWith('image/')) return cb(new Error('Only image uploads are accepted'));
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype)) {
+      return cb(Object.assign(new Error('Only JPEG, PNG and WebP uploads are accepted'), { status: 415 }));
+    }
     cb(null, true);
   },
 });
@@ -68,9 +102,18 @@ app.post('/api/photos', upload.single('photo'), async (req, res) => {
 
   try {
     const id = nanoid(10);
-    const ext = (path.extname(req.file.originalname) || '.jpg').toLowerCase();
-    const filename = `${id}${ext}`;
     const buffer = req.file.buffer;
+    // Reject active/vector formats before invoking any image decoder.
+    const format = imageFormat(buffer);
+    if (!format) return res.status(415).json({ error: 'Only JPEG, PNG and WebP images are accepted' });
+    let metadata;
+    try { metadata = await sharp(buffer, { limitInputPixels: 16_000_000 }).metadata(); }
+    catch { return res.status(400).json({ error: 'Invalid or oversized image' }); }
+    if (metadata.format !== format || !metadata.width || !metadata.height ||
+        metadata.width * metadata.height * (metadata.pages || 1) > 16_000_000) {
+      return res.status(400).json({ error: 'Invalid or oversized image' });
+    }
+    const filename = `${id}.${format === 'jpeg' ? 'jpg' : format}`;
 
     const [blurScore, exposureInfo, hash, exif] = await Promise.all([
       getBlurScore(buffer),
@@ -131,7 +174,7 @@ app.post('/api/photos', upload.single('photo'), async (req, res) => {
     res.status(201).json(toClientPhoto(row));
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: err.message || 'Failed to process photo' });
+    res.status(500).json({ error: 'Failed to process photo' });
   }
 });
 
@@ -154,7 +197,7 @@ app.post('/api/photos/:id/strip', async (req, res) => {
     res.json(toClientPhoto(updated));
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: err.message || 'Failed to strip metadata' });
+    res.status(500).json({ error: 'Failed to strip metadata' });
   }
 });
 
@@ -205,5 +248,15 @@ app.post('/api/validate/gstin', (req, res) => {
   res.json({ valid, parsed });
 });
 
-const PORT = process.env.PORT || 4173;
-app.listen(PORT, () => console.log(`stamped running at http://localhost:${PORT}`));
+app.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) return res.status(400).json({ error: 'Invalid or oversized upload' });
+  if (err.status === 415) return res.status(415).json({ error: err.message });
+  if (err.status === 400) return res.status(400).json({ error: 'Invalid request' });
+  console.error('Request failed:', err.message);
+  res.status(500).json({ error: 'Request failed' });
+});
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const PORT = process.env.PORT || 4173;
+  app.listen(PORT, '127.0.0.1', () => console.log(`stamped running at http://localhost:${PORT}`));
+}

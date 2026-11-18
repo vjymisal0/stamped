@@ -15,6 +15,12 @@ $$('.tab-btn').forEach((btn) => {
 
 // ---------- helpers ----------
 
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  })[char]);
+}
+
 function timeAgo(iso) {
   const s = Math.round((Date.now() - new Date(iso).getTime()) / 1000);
   if (s < 60) return `${s}s ago`;
@@ -91,20 +97,20 @@ function metricRow(label, score) {
 function photoCard(p) {
   const tags = [];
   if (p.hasGps) tags.push('<span class="tag tag--gps">gps present</span>');
-  if (p.stamp === 'DUPLICATE') tags.push(`<span class="tag tag--dup">dup of ${p.duplicateOf} · ${Math.round((p.similarity ?? 0) * 100)}%</span>`);
+  if (p.stamp === 'DUPLICATE') tags.push(`<span class="tag tag--dup">dup of ${escapeHtml(p.duplicateOf)} · ${Math.round((p.similarity ?? 0) * 100)}%</span>`);
   if (p.exifStripped) tags.push('<span class="tag">exif stripped</span>');
 
   const el = document.createElement('article');
   el.className = 'frame-card';
   el.dataset.id = p.id;
   el.innerHTML = `
-    <span class="stamp ${stampClass(p.stamp)}">${p.stamp}</span>
+    <span class="stamp ${stampClass(p.stamp)}">${escapeHtml(p.stamp)}</span>
     <div class="frame-thumb-wrap">
       <div class="sprockets">${'<span></span>'.repeat(10)}</div>
-      <img class="frame-thumb" src="${p.url}" alt="" loading="lazy" />
+      <img class="frame-thumb" src="${escapeHtml(p.url)}" alt="" loading="lazy" />
     </div>
     <div class="frame-body">
-      <div class="frame-name" title="${p.filename}">${p.filename} · ${p.hash.slice(0, 12)}…</div>
+      <div class="frame-name" title="${escapeHtml(p.filename)}">${escapeHtml(p.filename)} · ${escapeHtml(p.hash.slice(0, 12))}…</div>
       ${metricRow('sharp', p.blurScore)}
       ${metricRow('exposure', p.exposureScore)}
       ${tags.length ? `<div class="tags">${tags.join('')}</div>` : ''}
@@ -154,7 +160,7 @@ function renderResult(container, kind, valid, parsed) {
   const entries = Object.entries(parsed || {}).filter(([k]) => k !== 'valid');
   container.innerHTML = `
     <span class="stamp ${stampClass(stamp)}">${stamp}</span>
-    <dl>${entries.map(([k, v]) => `<dt>${k}</dt><dd>${v ?? '—'}</dd>`).join('')}</dl>`;
+    <dl>${entries.map(([k, v]) => `<dt>${escapeHtml(k)}</dt><dd>${escapeHtml(v ?? '—')}</dd>`).join('')}</dl>`;
 }
 
 $('#panForm').addEventListener('submit', async (e) => {
@@ -202,8 +208,8 @@ async function loadLog() {
   }
   list.innerHTML = rows.map((r) => `
     <div class="log-row">
-      <span class="log-kind">${r.kind}</span>
-      <span class="log-input">${r.input}</span>
+      <span class="log-kind">${escapeHtml(r.kind)}</span>
+      <span class="log-input">${escapeHtml(r.input)}</span>
       <span class="stamp ${stampClass(r.valid ? 'VALID' : 'INVALID')}">${r.valid ? 'VALID' : 'INVALID'}</span>
       <span class="log-time">${timeAgo(r.createdAt)}</span>
     </div>`).join('');
